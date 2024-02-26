@@ -7,7 +7,7 @@
 
 Write-Host "******************************Script started******************************" -ForegroundColor Gray
 #region preparefiles
-$UserRightsFile= "UserRights.CSV"
+$UserRightsFile= "UserRights.JSON"
 $CompInfoCSVFile= "CompInfo.csv"
 
 If (test-path .\$UserRightsFile) {
@@ -50,12 +50,13 @@ throw 'WinRM tests failed.'
 foreach ($comp in $computernames)
 
 {
-
- 
+ #region Machine info queries with output to CSV File
+ if($QueryCompInfo)
+    {
 
     Write-Host "Working on $comp machine info, please wait..." -ForegroundColor Yellow -NoNewline
 
-    #region Machine info queries with output to CSV File
+    
 
  
 
@@ -293,23 +294,23 @@ foreach ($comp in $computernames)
 
          }
 
-    
-
-    
-
     Invoke-Command -ComputerName $comp -ScriptBlock $script | Export-Csv .\$CompInfoCSVFile -NoTypeInformation -Append
+    Write-Host "Done!" -ForegroundColor Yellow
+
+    }
+
+    
+
+   
 
     #endregion
 
-    Write-Host "Done!" -ForegroundColor Yellow
-
- 
-
-    Write-Host "Working on $comp user rights assignment, please wait..." -ForegroundColor Yellow -NoNewline
 
     #region User Rights Assignment with output to JSON file
+    if ($QueryUserRights)
+    {
+    Write-Host "Working on $comp user rights assignment, please wait..." -ForegroundColor Yellow -NoNewline
 
- 
 
     #Get info about user rights assignment
 
@@ -363,13 +364,14 @@ foreach ($comp in $computernames)
 
  
 
-     Invoke-Command -ComputerName $comp -ScriptBlock $script | ConvertTo-Json | Out-File .\$UserRightsJSONFile
-
- 
+     $JSON= Invoke-Command -ComputerName $comp -ScriptBlock $script | ConvertTo-Json 
+     Out-File -InputObject $JSON  -FilePath .\$UserRightsFile
+     Write-Host "Done!`n" -ForegroundColor Yellow
+    }
 
     #endregion
 
-    Write-Host "Done!`n" -ForegroundColor Yellow
+    
 
  
 
