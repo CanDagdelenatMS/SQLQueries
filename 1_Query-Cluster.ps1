@@ -1,6 +1,6 @@
 ﻿param (
     [string[]]$computernames= "localhost",
-    [boolean]$QueryUserRights= $false, #by default queries User Rights Assignment
+    [boolean]$QueryUserRights= $true, #by default queries User Rights Assignment
     [boolean]$QueryCompInfo= $true,    #by default queries Computer Info such as CPU info, disk sizes, cluster info etc.
     [boolean]$TestWinRMAccess= $false   #by default tests WinRM network access
     )
@@ -306,7 +306,7 @@ foreach ($comp in $computernames)
     #endregion
 
 
-    #region User Rights Assignment with output to JSON file
+ #region User Rights Assignment with output to JSON file
     if ($QueryUserRights)
     {
     Write-Host "Working on $comp user rights assignment, please wait..." -ForegroundColor Yellow -NoNewline
@@ -318,13 +318,13 @@ foreach ($comp in $computernames)
 
             {
 
-                    if (Test-Path c:\tempfolder4clusters -ErrorAction SilentlyContinue) {
+            if (Test-Path c:\tempfolder4clusters -ErrorAction SilentlyContinue) {
 
                 Get-ChildItem c:\tempfolder4clusters | Remove-Item -Recurse -Force | Out-Null
 
                 }
 
-                    else { New-Item -Name tempfolder4clusters -Path c:\ -ItemType Directory | Out-Null }
+            else { New-Item -Name tempfolder4clusters -Path c:\ -ItemType Directory | Out-Null }
 
             secedit /export /cfg c:\tempfolder4clusters\cfg.txt /areas USER_RIGHTS /log c:\tempfolder4clusters\log.txt  | Out-Null
 
@@ -364,9 +364,9 @@ foreach ($comp in $computernames)
 
  
 
-     $JSON= Invoke-Command -ComputerName $comp -ScriptBlock $script | ConvertTo-Json 
-     Out-File -InputObject $JSON  -FilePath .\$UserRightsFile
-     Write-Host "Done!`n" -ForegroundColor Yellow
+        $currentcomprights= Invoke-Command -ComputerName $comp -ScriptBlock $script | ConvertTo-Json
+        Out-File  -InputObject $currentcomprights -FilePath .\$UserRightsFile
+        Write-Host "Done!" -ForegroundColor Yellow
     }
 
     #endregion
