@@ -1,24 +1,19 @@
 ﻿param (
     [string[]]$computernames= "localhost",
-    [boolean]$QueryUserRights= $true, #by default queries User Rights Assignment
-    [boolean]$QueryCompInfo= $true,    #by default queries Computer Info such as CPU info, disk sizes, cluster info etc.
-    [boolean]$TestWinRMAccess= $false   #by default tests WinRM network access
+    [boolean]$QueryUserRights= $true, #queries User Rights Assignment
+    [boolean]$QueryCompInfo= $true,    #queries Computer Info such as CPU info, disk sizes, cluster info etc.
+    [boolean]$TestWinRMAccess= $false   #tests WinRM network access
     )
 
 Write-Host "******************************Script started******************************" -ForegroundColor Gray
-#region preparefiles
-$UserRightsFile= "UserRights.JSON"
-$CompInfoCSVFile= "CompInfo.csv"
+#region preparefiles - All existing JSON files will be deleted. Plus, existing CompInfoCSVFile will be deleted.
+$UserRightsFile= "UserRights.JSON" #If run for Server1, Server2 will generate 2 files:  Server1_UserRights.JSON & Server2_UserRights.JSON
+$CompInfoCSVFile= "CompInfo.csv"  # #If run for Server1, Server2 will generate 1 file: CompInfo.Csv
 
-If (test-path .\$UserRightsFile) {
-if (Test-Path .\previous_$UserRightsFile) {Remove-Item .\previous_$UserRightsFile}
-Rename-Item -LiteralPath .\$UserRightsFile -NewName "previous_$UserRightsFile"
-}
+If (test-path .\*.JSON) {Remove-Item ".\previous_*.json"}
 
-If (test-path .\$CompInfoCSVFile) {
-if (Test-Path .\previous_$CompInfoCSVFile) {Remove-Item .\previous_$CompInfoCSVFile}
-Rename-Item -LiteralPath .\$CompInfoCSVFile -NewName "previous_$CompInfoCSVFile"
-}
+If (test-path .\$CompInfoCSVFile) {Remove-Item .\$CompInfoCSVFile}
+
 
 #endregion
 #region Winrm Check
@@ -296,6 +291,7 @@ foreach ($comp in $computernames)
 
     Invoke-Command -ComputerName $comp -ScriptBlock $script | Export-Csv .\$CompInfoCSVFile -NoTypeInformation -Append
     Write-Host "Done!" -ForegroundColor Yellow
+    Write-Host "--Resource information for $comp appended to: $CompInfoCSVFile" -ForegroundColor DarkYellow
 
     }
 
@@ -364,9 +360,13 @@ foreach ($comp in $computernames)
 
  
 
-        $currentcomprights= Invoke-Command -ComputerName $comp -ScriptBlock $script | ConvertTo-Json
-        Out-File  -InputObject $currentcomprights -FilePath .\$UserRightsFile
+        $currentcomprights= Invoke-Command -ComputerName $comp -ScriptBlock $script
+        $hostname=$currentcomprights.ComputerName
         Write-Host "Done!" -ForegroundColor Yellow
+        $currentcomprights= ConvertTo-Json -InputObject $currentcomprights
+        Out-File  -InputObject $currentcomprights -FilePath "$hostname`_$UserRightsFile"
+        Write-Host "--User Rights for $comp saved to: $hostname`_$UserRightsFile" -ForegroundColor DarkYellow
+        
     }
 
     #endregion
